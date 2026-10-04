@@ -1,12 +1,8 @@
 import { GET_FACT_SHEET_COUNTS } from '../graphql/queries/workspaceQueries.js';
 import { SEARCH_FACT_SHEET_BY_NAME } from '../graphql/queries/factSheetQueries.js';
 import { GET_FACT_SHEET_SUBSCRIPTIONS } from '../graphql/queries/subscriptionQueries.js';
-import { CREATE_FACT_SHEET, UPDATE_FACT_SHEET } from '../graphql/queries/factSheetMutations.js';
 import { withErrorHandling } from '../utils/responseHandler.js';
 import { z } from 'zod';
-import { factSheetSchema } from '../types/factSheetSchema.js';
-import { factSheetInputSchema } from '../types/factSheetInputSchema.js';
-import { factSheetPatchSchema } from '../types/factSheetPatchSchema.js';
 
 export function registerWorkspaceTools(server, leanixClient) {
   // Tool to get Fact Sheet counts and workspace overview
@@ -48,35 +44,7 @@ export function registerWorkspaceTools(server, leanixClient) {
     }, 'fetching subscriptions for a fact sheet')
   );
 
-  // Tool to create a new fact sheet
-  server.tool(
-    'createFactSheet',
-    {
-      params: z.object({
-        input: factSheetInputSchema
-      })
-    },
-    withErrorHandling(async ({ params }) => {
-      const result = await leanixClient.query(CREATE_FACT_SHEET, { input: params.input });
-      return result;
-    }, 'creating new fact sheet')
-  );
-
-  // Tool to update a fact sheet
-  server.tool(
-    'updateFactSheet',
-    {
-      params: z.object({
-        id: z.string().describe('ID of the fact sheet to update'),
-        patches: factSheetPatchSchema
-      })
-    },
-    withErrorHandling(async ({ params }) => {
-      const result = await leanixClient.query(UPDATE_FACT_SHEET, { 
-        id: params.id,
-        patches: params.patches
-      });
-      return result;
-    }, 'updating fact sheet')
-  );
-} 
+  // Mutations are intentionally not registered. A model-callable confirmation
+  // does not authenticate a human decision. Add writes only behind a reviewed
+  // operator channel with immutable action/payload/target/version binding.
+}

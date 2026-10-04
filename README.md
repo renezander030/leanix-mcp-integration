@@ -4,17 +4,15 @@ A Model Context Protocol (MCP) server that connects LeanIX to AI assistants. It 
 
 ## Core Functionality
 
-This integration provides five MCP tools for LeanIX operations:
+This integration provides three read-only MCP tools for LeanIX operations:
 
 1. **Fact Sheet Overview**: Get counts and statistics of fact sheets in your workspace
 2. **Search**: Find fact sheets by their names
-3. **Subscription Management**: View who is subscribed to specific fact sheets
-4. **Create Fact Sheets**: Add new fact sheets to your workspace
-5. **Update Fact Sheets**: Modify existing fact sheet information
+3. **Subscriptions**: View who is subscribed to specific fact sheets
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- A maintained Node.js LTS release; the locked MCP SDK requires Node.js 18 or newer
 - A LeanIX workspace and API token
 - Basic understanding of GraphQL and MCP
 
@@ -23,7 +21,7 @@ This integration provides five MCP tools for LeanIX operations:
 1. Clone this repository
 2. Install dependencies:
    ```bash
-   npm install
+   npm ci --ignore-scripts
    ```
 3. Create a `.env` file in the root directory with your LeanIX credentials:
    ```
@@ -48,7 +46,7 @@ This integration provides five MCP tools for LeanIX operations:
     │       ├── factSheetQueries.js     # Queries for fact sheet operations
     │       └── workspaceQueries.js     # Queries for workspace-level operations
     ├── tools/
-    │   └── workspaceTools.js # Defines and registers the five MCP tools
+    │   └── workspaceTools.js # Defines and registers the three read tools
     ├── types/
     │   └── schemas.js       # Zod schemas for validating tool parameters
     └── utils/
@@ -112,11 +110,11 @@ Replace `/path/to/your/lean/server.js` with the absolute path to your server.js 
 
 ## Debugging Tips
 
-1. Enable debug logging in your configuration file to verify environment variables are loaded correctly.
+1. Check required environment variable names are present without printing their values. Never log API tokens.
 
 2. Use the LeanIX GraphiQL interface to test your queries before implementing them in your tools.
 
-3. Check the server console for detailed error messages when tools fail.
+3. Use the correlation ID from the safe error response. Detailed diagnostics require a separate operator-controlled, explicitly redacted sink.
 
 ## Resources
 
@@ -130,3 +128,18 @@ MIT
 ## Safe MCP tool failures
 
 The response wrapper returns `isError: true` with a safe correlation ID. Raw remote errors, tokens, schemas and stacks are excluded from default logs and tool text. Run `node --test tests/responseHandler.test.js` to verify this contract; a live LeanIX tenant is not required. [Updated integration note](https://gist.github.com/renezander030/83ad49aeffa5f8749325a2b19617823f).
+
+## Read-only tool boundary
+
+`createFactSheet` and `updateFactSheet` are no longer registered. The previous handlers performed GraphQL writes without authenticated human consent. This is an intentional compatibility change: the public server now exposes only its three read tools. There is no environment flag or model-callable confirmation bypass. Add writes only through a reviewed, authenticated operator channel that binds the exact action/payload, current target/version and expiry, and checks permissions again at dispatch. A live tenant/version contract must be established before claiming conditional-write protection.
+
+```bash
+npm ci --ignore-scripts
+node --test tests/*.test.js
+```
+
+Four tests cover safe success/error responses, static read registration, and a real in-memory MCP client/server handshake. The handshake lists only three read tools, executes a synthetic read and rejects both mutation tool names without calling the provider. No LeanIX API is contacted.
+
+## Dependency maintenance
+
+The lockfile now pins MCP SDK 1.32.0 and patched transitive dependencies within the existing declared version ranges. `npm audit --json` reported zero vulnerabilities on 4 October 2026 after this update; advisories can change. Install with `npm ci --ignore-scripts` to reproduce the tested lockfile.
