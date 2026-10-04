@@ -122,8 +122,11 @@ Replace `/path/to/your/lean/server.js` with the absolute path to your server.js 
 
 - [LeanIX API Documentation](https://docs-eam.leanix.net/reference/graphql-api)
 - [GraphQL Documentation](https://graphql.org/learn/)
-- [Model Context Protocol Documentation](https://modelcontextprotocol.github.io/)
+- [Model Context Protocol Documentation](https://modelcontextprotocol.io/docs/getting-started/intro)
 
 ## License
 
 MIT 
+## Safe MCP tool failures
+
+The response wrapper returns `isError: true` with a safe correlation ID. Raw remote errors, tokens, schemas and stacks are excluded from default logs and tool text. Run `node --test tests/responseHandler.test.js` to verify this contract; a live LeanIX tenant is not required. [Updated integration note](https://gist.github.com/renezander030/83ad49aeffa5f8749325a2b19617823f).
